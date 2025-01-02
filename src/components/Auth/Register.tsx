@@ -1,8 +1,9 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, UserPlus, User } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+
 const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -11,20 +12,37 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const navigate = useNavigate();
-  let userId = Cookies.get('userId');
-  let accessToken = Cookies.get('accessToken');
+
   useEffect(() => {
+    const userId = Cookies.get('userId');
+    const accessToken = Cookies.get('accessToken');
     if (accessToken && userId) {
-      navigate('/')
+      navigate('/');
     }
-  }, [accessToken, userId])
+  }, []);
+
+  const validateInputs = () => {
+    const newErrors = { username: '', email: '', password: '', confirmPassword: '' };
+
+    if (!username.trim()) newErrors.username = 'Username is required.';
+    if (!email.trim()) newErrors.email = 'Email is required.';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email format.';
+    if (!password.trim()) newErrors.password = 'Password is required.';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
+    if (!confirmPassword.trim()) newErrors.confirmPassword = 'Confirm password is required.';
+    else if (password !== confirmPassword) newErrors.confirmPassword = "Passwords don't match.";
+
+    setErrors(newErrors);
+    return Object.values(newErrors).every((error) => !error);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords don't match");
-      return;
-    }
+
+    if (!validateInputs()) return;
+
     setIsLoading(true);
 
     try {
@@ -35,10 +53,8 @@ const Register = () => {
       });
 
       if (response.status === 201) {
-        console.log('Registration successful:', response.data);
         navigate('/login');
       } else {
-        console.error('Unexpected response:', response);
         alert('Something went wrong. Please try again.');
       }
     } catch (error) {
@@ -53,17 +69,11 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 p-4">
       <div className="w-full max-w-[400px] bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Create an account</h2>
-            <p className="text-gray-600">
-              Sign up to get started with our service
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">Create an account</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
               <div className="relative">
                 <input
                   id="username"
@@ -71,16 +81,16 @@ const Register = () => {
                   placeholder="Your username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 transition-all duration-200 ease-in-out"
+                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
                 />
                 <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
               </div>
+              {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
+
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
               <div className="relative">
                 <input
                   id="email"
@@ -88,89 +98,73 @@ const Register = () => {
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 transition-all duration-200 ease-in-out"
+                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
                 />
                 <Mail className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
               </div>
+              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 pr-10 transition-all duration-200 ease-in-out"
+                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
                 />
                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
                 <button
                   type="button"
-                  className="absolute right-3 top-3.5 text-gray-400 focus:outline-none hover:text-gray-600 transition-colors duration-200"
+                  className="absolute right-3 top-3.5"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
+              {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
               <div className="relative">
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 pr-10 transition-all duration-200 ease-in-out"
+                  className="w-full px-4 py-2 h-12 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500"
                 />
                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
                 <button
                   type="button"
-                  className="absolute right-3 top-3.5 text-gray-400 focus:outline-none hover:text-gray-600 transition-colors duration-200"
+                  className="absolute right-3 top-3.5"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showConfirmPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
+              {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword}</p>}
             </div>
-            <button 
-              type="submit" 
-              className="w-full h-12 bg-green-600 text-white rounded-lg font-medium text-base hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 ease-in-out transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center space-x-2"
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full h-12 bg-green-600 text-white rounded-lg font-medium"
               disabled={isLoading}
             >
-              {isLoading ? (
-                <>
-                  <div className="h-5 w-5 animate-spin rounded-full border-3 border-white border-t-transparent" />
-                  <span>Registering...</span>
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-5 w-5" />
-                  <span>Register</span>
-                </>
-              )}
+              {isLoading ? 'Registering...' : 'Register'}
             </button>
           </form>
           <div className="mt-6 text-center">
             <span className="text-gray-600">Already have an account? </span>
-            <button 
-              type="button" 
-              className="text-blue-600 hover:text-blue-800 font-medium focus:outline-none transition-colors duration-200"
+            <button
+              type="button"
+              className="text-blue-600 hover:text-blue-800"
               onClick={() => navigate('/login')}
             >
               Sign in

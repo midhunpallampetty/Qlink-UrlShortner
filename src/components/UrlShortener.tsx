@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Copy, LinkIcon, Loader2 } from 'lucide-react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './Navbar';
 
 const UrlShortener: React.FC = () => {
@@ -9,17 +11,48 @@ const UrlShortener: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const isValidUrl = (input: string) => {
+    const urlPattern = new RegExp(
+      '^(https?:\\/\\/)?' + // protocol
+      '((([a-zA-Z0-9\\-]+\\.)+[a-zA-Z]{2,})|' + // domain name
+      'localhost|' + // localhost
+      '\\d{1,3}(\\.\\d{1,3}){3})' + // OR IP (v4) address
+      '(\\:\\d+)?(\\/[-a-zA-Z0-9@:%_\\+.~#?&//=]*)?$', // port and path
+      'i'
+    );
+    return !!urlPattern.test(input);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidUrl(url)) {
+      toast.error('Please enter a valid URL!', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Replace with your backend endpoint
       const response = await axios.post(import.meta.env.VITE_API_URL_SHORT, {
         originalUrl: url,
       });
       setShortUrl(response.data.shortUrl);
+      toast.success('URL shortened successfully!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error('Error shortening URL:', error);
+      toast.error('Something went wrong. Please try again!', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -28,6 +61,10 @@ const UrlShortener: React.FC = () => {
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shortUrl);
     setCopied(true);
+    toast.info('Copied to clipboard!', {
+      position: 'top-right',
+      autoClose: 2000,
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -41,20 +78,18 @@ const UrlShortener: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
                 <input
-                  type="url"
+                  type="text" // Changed from "url" to "text"
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your long URL here"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  required
                 />
                 <LinkIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               </div>
               <button
                 type="submit"
-                className={`w-full py-2 px-4 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors ${
-                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
-                }`}
+                className={`w-full py-2 px-4 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors ${isLoading ? 'opacity-75 cursor-not-allowed' : ''
+                  }`}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -67,6 +102,7 @@ const UrlShortener: React.FC = () => {
                 )}
               </button>
             </form>
+
             {shortUrl && (
               <div className="mt-6 p-4 bg-purple-50 rounded-lg">
                 <p className="text-sm font-medium text-purple-700 mb-2">Your shortened URL:</p>
@@ -87,17 +123,14 @@ const UrlShortener: React.FC = () => {
                     <Copy size={20} />
                   </button>
                 </div>
-                {copied && (
-                  <p className="text-sm text-green-600 mt-2">Copied to clipboard!</p>
-                )}
               </div>
             )}
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
 
 export default UrlShortener;
-
